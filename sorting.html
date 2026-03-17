@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enhanced 3D Sorting Visualizer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap');
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #fff;
+            overflow: hidden;
+        }
+        
+        #container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+        
+        #visualizer {
+            flex: 1;
+            background: radial-gradient(circle at center, #1a1a2e 0%, #0a0a0a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #visualizer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.1) 0%, transparent 50%), radial-gradient(circle at 40% 80%, rgba(119, 198, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        #controls {
+            width: 380px;
+            background: linear-gradient(145deg, #1e1e2e 0%, #2a2a3e 100%);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+        }
+        
+        .control-group {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .label {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #e0e0e0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        #arrayInput {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(45px, 1fr));
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        
+        #arrayInput input {
+            width: 100%;
+            height: 45px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            transition: all 0.3s ease;
+        }
+        
+        #arrayInput input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+            background: rgba(0, 212, 255, 0.1);
+        }
+        
+        button,
+        select {
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(145deg, #00d4ff, #0099cc);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        button:hover::before {
+            left: 100%;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 212, 255, 0.3);
+        }
+        
+        button:disabled {
+            background: linear-gradient(145deg, #444, #333);
+            color: #aaa;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .control-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .control-row input[type="number"],
+        .control-row input[type="range"] {
+            flex: 1;
+            padding: 10px;
+            border-radius: 6px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            font-size: 14px;
+        }
+        
+        .control-row input[type="range"] {
+            accent-color: #00d4ff;
+        }
+        
+        #pseudoCode {
+            background: linear-gradient(145deg, #0a0a0a, #1a1a1a);
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            padding: 16px;
+            border-radius: 8px;
+            min-height: 120px;
+            font-size: 12px;
+            line-height: 1.4;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            white-space: pre-wrap;
+            overflow-y: auto;
+            max-height: 200px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #00d4ff;
+            font-family: 'Orbitron', monospace;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #aaa;
+            margin-top: 4px;
+        }
+        
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .speed-label {
+            font-size: 12px;
+            color: #aaa;
+            min-width: 40px;
+        }
+        
+        #title {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-family: 'Orbitron', monospace;
+            font-size: 24px;
+            font-weight: 900;
+            background: linear-gradient(45deg, #00d4ff, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            z-index: 10;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        }
+        
+        .algorithm-info {
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 8px;
+            line-height: 1.3;
+        }
+        
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 0.6;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+        
+        .pulsing {
+            animation: pulse 1s infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div id="visualizer">
+            <div id="title">3D SORTING VISUALIZER</div>
+        </div>
+        <div id="controls">
+            <div class="control-group">
+                <div class="label">Array Configuration</div>
+                <div class="control-row">
+                    <input type="number" id="arraySize" min="3" max="12" value="8" />
+                    <button id="generateArray">🎲 Random</button>
+                </div>
+                <div id="arrayInput"></div>
+            </div>
+
+            <div class="control-group">
+                <div class="label">Algorithm Selection</div>
+                <select id="algorithmSelect">
+                <option value="bubble">🫧 Bubble Sort</option>
+                <option value="selection">🔍 Selection Sort</option>
+                <option value="insertion">📝 Insertion Sort</option>
+                <option value="merge">🔀 Merge Sort</option>
+                <option value="quick">⚡ Quick Sort</option>
+                <option value="heap">🏔️ Heap Sort</option>
+            </select>
+                <div class="algorithm-info" id="algorithmInfo">
+                    Select an algorithm to see details
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="label">Animation Speed</div>
+                <div class="speed-control">
+                    <span class="speed-label">Slow</span>
+                    <input type="range" id="speedControl" min="1" max="10" value="5" />
+                    <span class="speed-label">Fast</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="control-row">
+                    <button id="startSort">▶️ Start Sort</button>
+                    <button id="pauseSort" disabled>⏸️ Pause</button>
+                </div>
+                <div class="control-row">
+                    <button id="nextStep" disabled>⏭️ Step</button>
+                    <button id="reset">🔄 Reset</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="label">Statistics</div>
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="comparisons">0</div>
+                        <div class="stat-label">Comparisons</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="swaps">0</div>
+                        <div class="stat-label">Swaps</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="label">Pseudocode</div>
+                <div id="pseudoCode"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Three.js setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            alpha: true
+        });
+        const visualizer = document.getElementById('visualizer');
+
+        renderer.setClearColor(0x000000, 0);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        visualizer.appendChild(renderer.domElement);
+
+        function resizeRenderer() {
+            const w = visualizer.clientWidth,
+                h = visualizer.clientHeight;
+            renderer.setSize(w, h);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+        }
+        window.addEventListener('resize', resizeRenderer);
+
+        // Enhanced lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+        scene.add(ambientLight);
+
+        const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        mainLight.position.set(10, 10, 10);
+        mainLight.castShadow = true;
+        mainLight.shadow.mapSize.width = 2048;
+        mainLight.shadow.mapSize.height = 2048;
+        scene.add(mainLight);
+
+        const fillLight = new THREE.DirectionalLight(0x4ecdc4, 0.3);
+        fillLight.position.set(-10, 5, -5);
+        scene.add(fillLight);
+
+        const rimLight = new THREE.DirectionalLight(0xff6b6b, 0.2);
+        rimLight.position.set(0, -10, -10);
+        scene.add(rimLight);
+
+        // Particle system for background
+        const particleGeometry = new THREE.BufferGeometry();
+        const particleCount = 1000;
+        const positions = new Float32Array(particleCount * 3);
+
+        for (let i = 0; i < particleCount * 3; i++) {
+            positions[i] = (Math.random() - 0.5) * 200;
+        }
+
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const particleMaterial = new THREE.PointsMaterial({
+            color: 0x00d4ff,
+            size: 0.5,
+            transparent: true,
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
+        });
+
+        const particles = new THREE.Points(particleGeometry, particleMaterial);
+        scene.add(particles);
+
+        camera.position.set(0, 15, 35);
+        camera.lookAt(0, 0, 0);
+
+        // Variables
+        let array = [];
+        let cubes = [];
+        let steps = [];
+        let currentStep = 0;
+        let isAnimating = false;
+        let isPaused = false;
+        let isAutoPlaying = false;
+        let comparisonCount = 0;
+        let swapCount = 0;
+        let animationSpeed = 5;
+
+        // DOM elements
+        const arraySizeInput = document.getElementById('arraySize');
+        const generateArrayBtn = document.getElementById('generateArray');
+        const arrayInputDiv = document.getElementById('arrayInput');
+        const algorithmSelect = document.getElementById('algorithmSelect');
+        const algorithmInfo = document.getElementById('algorithmInfo');
+        const startSortBtn = document.getElementById('startSort');
+        const pauseSortBtn = document.getElementById('pauseSort');
+        const nextStepBtn = document.getElementById('nextStep');
+        const resetBtn = document.getElementById('reset');
+        const pseudoCodeDiv = document.getElementById('pseudoCode');
+        const speedControl = document.getElementById('speedControl');
+        const comparisonsEl = document.getElementById('comparisons');
+        const swapsEl = document.getElementById('swaps');
+
+        // Algorithm information
+        const algorithmData = {
+            bubble: {
+                name: "Bubble Sort",
+                description: "Compares adjacent elements and swaps them if they're in wrong order. Simple but inefficient O(n²).",
+                code: `for i = 0 to n-1:
+    for j = 0 to n-i-2:
+        if arr[j] > arr[j+1]:
+            swap(arr[j], arr[j+1])`
+            },
+            selection: {
+                name: "Selection Sort",
+                description: "Finds minimum element and places it at the beginning. Also O(n²) but with fewer swaps.",
+                code: `for i = 0 to n-1:
+    min_idx = i
+    for j = i+1 to n-1:
+        if arr[j] < arr[min_idx]:
+            min_idx = j
+    swap(arr[i], arr[min_idx])`
+            },
+            insertion: {
+                name: "Insertion Sort",
+                description: "Builds sorted array one element at a time. Efficient for small datasets. O(n²) worst case.",
+                code: `for i = 1 to n-1:
+    key = arr[i]
+    j = i - 1
+    while j >= 0 and arr[j] > key:
+        arr[j+1] = arr[j]
+        j = j - 1
+    arr[j+1] = key`
+            },
+            merge: {
+                name: "Merge Sort",
+                description: "Divide and conquer algorithm. Consistently O(n log n) performance. Stable sort.",
+                code: `mergeSort(arr, left, right):
+    if left < right:
+        mid = (left + right) / 2
+        mergeSort(arr, left, mid)
+        mergeSort(arr, mid+1, right)
+        merge(arr, left, mid, right)`
+            },
+            quick: {
+                name: "Quick Sort",
+                description: "Fast divide-and-conquer algorithm. Average O(n log n), worst case O(n²).",
+                code: `quickSort(arr, low, high):
+    if low < high:
+        pi = partition(arr, low, high)
+        quickSort(arr, low, pi-1)
+        quickSort(arr, pi+1, high)`
+            },
+            heap: {
+                name: "Heap Sort",
+                description: "Uses binary heap data structure. Guaranteed O(n log n) performance.",
+                code: `heapSort(arr):
+    buildMaxHeap(arr)
+    for i = n-1 to 1:
+        swap(arr[0], arr[i])
+        heapify(arr, 0, i)`
+            }
+        };
+
+        function updateAlgorithmInfo() {
+            const selected = algorithmData[algorithmSelect.value];
+            algorithmInfo.textContent = selected.description;
+            pseudoCodeDiv.textContent = selected.code;
+        }
+
+        function createArrayInputs(size) {
+            arrayInputDiv.innerHTML = '';
+            for (let i = 0; i < size; i++) {
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.value = Math.floor(Math.random() * 50) + 10;
+                input.min = 1;
+                input.max = 99;
+                input.addEventListener('change', () => {
+                    array[i] = parseInt(input.value) || 1;
+                    updateCubes();
+                });
+                arrayInputDiv.appendChild(input);
+            }
+        }
+
+        function generateRandomArray() {
+            const size = parseInt(arraySizeInput.value);
+            array = [];
+            for (let i = 0; i < size; i++) {
+                array.push(Math.floor(Math.random() * 50) + 10);
+            }
+            updateArrayInputs();
+            createCubes();
+            resetStats();
+        }
+
+        function updateArrayInputs() {
+            const inputs = arrayInputDiv.querySelectorAll('input');
+            inputs.forEach((input, idx) => {
+                input.value = array[idx];
+            });
+        }
+
+        function resetStats() {
+            comparisonCount = 0;
+            swapCount = 0;
+            comparisonsEl.textContent = '0';
+            swapsEl.textContent = '0';
+        }
+
+        function updateStats() {
+            comparisonsEl.textContent = comparisonCount;
+            swapsEl.textContent = swapCount;
+        }
+
+        function createCubes() {
+            cubes.forEach(cube => scene.remove(cube));
+            cubes = [];
+
+            const cubeSize = 3.5,
+                gap = 1;
+            const totalW = array.length * (cubeSize + gap) - gap;
+            const startX = -totalW / 2 + cubeSize / 2;
+
+            array.forEach((value, i) => {
+                const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+                const material = new THREE.MeshPhongMaterial({
+                    color: new THREE.Color().setHSL(0.6, 0.8, 0.6),
+                    shininess: 100,
+                    transparent: true,
+                    opacity: 0.9
+                });
+
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.x = startX + i * (cubeSize + gap);
+                cube.position.y = cubeSize / 2;
+                cube.castShadow = true;
+                cube.receiveShadow = true;
+                cube.userData = {
+                    index: i,
+                    value: value,
+                    originalX: cube.position.x
+                };
+
+                // Enhanced number label
+                const canvas = document.createElement('canvas');
+                canvas.width = 128;
+                canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+
+                // Gradient background
+                const gradient = ctx.createLinearGradient(0, 0, 128, 128);
+                gradient.addColorStop(0, 'rgba(0, 212, 255, 0.8)');
+                gradient.addColorStop(1, 'rgba(78, 205, 196, 0.8)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 128, 128);
+
+                // Text
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 48px Orbitron, monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(value, 64, 64);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const labelMat = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    transparent: true,
+                    alphaTest: 0.1
+                });
+                const label = new THREE.Mesh(new THREE.PlaneGeometry(2.5, 2.5), labelMat);
+                label.position.set(0, 0, cubeSize / 2 + 0.01);
+                cube.add(label);
+
+                scene.add(cube);
+                cubes.push(cube);
+            });
+        }
+
+        function updateCubes() {
+            cubes.forEach((cube, i) => {
+                cube.userData.value = array[i];
+                const label = cube.children[0];
+                const canvas = label.material.map.image;
+                const ctx = canvas.getContext('2d');
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                const gradient = ctx.createLinearGradient(0, 0, 128, 128);
+                gradient.addColorStop(0, 'rgba(0, 212, 255, 0.8)');
+                gradient.addColorStop(1, 'rgba(78, 205, 196, 0.8)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 128, 128);
+
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 48px Orbitron, monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(array[i], 64, 64);
+                label.material.map.needsUpdate = true;
+            });
+        }
+
+        // Sorting algorithms
+        function bubbleSortSteps(arr) {
+            const steps = [];
+            const a = arr.slice();
+            const n = a.length;
+            for (let i = 0; i < n - 1; i++) {
+                for (let j = 0; j < n - i - 1; j++) {
+                    steps.push({
+                        type: 'compare',
+                        indices: [j, j + 1]
+                    });
+                    if (a[j] > a[j + 1]) {
+                        steps.push({
+                            type: 'swap',
+                            indices: [j, j + 1]
+                        });
+                        [a[j], a[j + 1]] = [a[j + 1], a[j]];
+                    }
+                }
+            }
+            return steps;
+        }
+
+        function selectionSortSteps(arr) {
+            const steps = [];
+            const a = arr.slice();
+            const n = a.length;
+            for (let i = 0; i < n - 1; i++) {
+                let minIdx = i;
+                steps.push({
+                    type: 'select',
+                    indices: [i]
+                });
+                for (let j = i + 1; j < n; j++) {
+                    steps.push({
+                        type: 'compare',
+                        indices: [minIdx, j]
+                    });
+                    if (a[j] < a[minIdx]) {
+                        minIdx = j;
+                    }
+                }
+                if (minIdx !== i) {
+                    steps.push({
+                        type: 'swap',
+                        indices: [i, minIdx]
+                    });
+                    [a[i], a[minIdx]] = [a[minIdx], a[i]];
+                }
+            }
+            return steps;
+        }
+
+        function insertionSortSteps(arr) {
+            const steps = [];
+            const a = arr.slice();
+            for (let i = 1; i < a.length; i++) {
+                let key = a[i];
+                let j = i - 1;
+                steps.push({
+                    type: 'select',
+                    indices: [i]
+                });
+                while (j >= 0) {
+                    steps.push({
+                        type: 'compare',
+                        indices: [j, j + 1]
+                    });
+                    if (a[j] > key) {
+                        steps.push({
+                            type: 'shift',
+                            indices: [j, j + 1]
+                        });
+                        a[j + 1] = a[j];
+                        j--;
+                    } else {
+                        break;
+                    }
+                }
+                a[j + 1] = key;
+                steps.push({
+                    type: 'place',
+                    indices: [j + 1]
+                });
+            }
+            return steps;
+        }
+
+        function mergeSortSteps(arr) {
+            const steps = [];
+            const a = arr.slice();
+
+            function merge(left, mid, right) {
+                const leftArr = a.slice(left, mid + 1);
+                const rightArr = a.slice(mid + 1, right + 1);
+                let i = 0,
+                    j = 0,
+                    k = left;
+
+                while (i < leftArr.length && j < rightArr.length) {
+                    steps.push({
+                        type: 'compare',
+                        indices: [left + i, mid + 1 + j]
+                    });
+                    if (leftArr[i] <= rightArr[j]) {
+                        a[k] = leftArr[i];
+                        steps.push({
+                            type: 'place',
+                            indices: [k],
+                            value: leftArr[i]
+                        });
+                        i++;
+                    } else {
+                        a[k] = rightArr[j];
+                        steps.push({
+                            type: 'place',
+                            indices: [k],
+                            value: rightArr[j]
+                        });
+                        j++;
+                    }
+                    k++;
+                }
+
+                while (i < leftArr.length) {
+                    a[k] = leftArr[i];
+                    steps.push({
+                        type: 'place',
+                        indices: [k],
+                        value: leftArr[i]
+                    });
+                    i++;
+                    k++;
+                }
+
+                while (j < rightArr.length) {
+                    a[k] = rightArr[j];
+                    steps.push({
+                        type: 'place',
+                        indices: [k],
+                        value: rightArr[j]
+                    });
+                    j++;
+                    k++;
+                }
+            }
+
+            function mergeSortHelper(left, right) {
+                if (left < right) {
+                    const mid = Math.floor((left + right) / 2);
+                    mergeSortHelper(left, mid);
+                    mergeSortHelper(mid + 1, right);
+                    merge(left, mid, right);
+                }
+            }
+
+            mergeSortHelper(0, a.length - 1);
+            return steps;
+        }
+
+        function quickSortSteps(arr) {
+            const steps = [];
+            const a = arr.slice();
+
+            function partition(low, high) {
+                const pivot = a[high];
+                steps.push({
+                    type: 'pivot',
+                    indices: [high]
+                });
+                let i = low - 1;
+
+                for (let j = low; j < high; j++) {
+                    steps.push({
+                        type: 'compare',
+                        indices: [j, high]
+                    });
+                    if (a[j] < pivot) {
+                        i++;
+                        if (i !== j) {
+                            steps.push({
+                                type: 'swap',
+                                indices: [i, j]
+                            });
+                            [a[i], a[j]] = [a[j], a[i]];
+                        }
+                    }
+                }
+
+                steps.push({
+                    type: 'swap',
+                    indices: [i + 1, high]
+                });
+                [a[i + 1], a[high]] = [a[high], a[i + 1]];
+                return i + 1;
+            }
+
+            function quickSortHelper(low, high) {
+                if (low < high) {
+                    const pi = partition(low, high);
+                    quickSortHelper(low, pi - 1);
+                    quickSortHelper(pi + 1, high);
+                }
+            }
+
+            quickSortHelper(0, a.length - 1);
+            return steps;
+        }
+
+        function heapSortSteps(arr) {
+            const steps = [];
+            const a = arr.slice();
+            const n = a.length;
+
+            function heapify(n, i) {
+                let largest = i;
+                const left = 2 * i + 1;
+                const right = 2 * i + 2;
+
+                if (left < n) {
+                    steps.push({
+                        type: 'compare',
+                        indices: [left, largest]
+                    });
+                    if (a[left] > a[largest]) largest = left;
+                }
+
+                if (right < n) {
+                    steps.push({
+                        type: 'compare',
+                        indices: [right, largest]
+                    });
+                    if (a[right] > a[largest]) largest = right;
+                }
+
+                if (largest !== i) {
+                    steps.push({
+                        type: 'swap',
+                        indices: [i, largest]
+                    });
+                    [a[i], a[largest]] = [a[largest], a[i]];
+                    heapify(n, largest);
+                }
+            }
+
+            // Build max heap
+            for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+                heapify(n, i);
+            }
+
+            // Extract elements from heap
+            for (let i = n - 1; i > 0; i--) {
+                steps.push({
+                    type: 'swap',
+                    indices: [0, i]
+                });
+                [a[0], a[i]] = [a[i], a[0]];
+                heapify(i, 0);
+            }
+
+            return steps;
+        }
+
+        function getSteps(algorithm, arr) {
+            switch (algorithm) {
+                case 'bubble':
+                    return bubbleSortSteps(arr);
+                case 'selection':
+                    return selectionSortSteps(arr);
+                case 'insertion':
+                    return insertionSortSteps(arr);
+                case 'merge':
+                    return mergeSortSteps(arr);
+                case 'quick':
+                    return quickSortSteps(arr);
+                case 'heap':
+                    return heapSortSteps(arr);
+                default:
+                    return bubbleSortSteps(arr);
+            }
+        }
+
+        function resetCubeColors() {
+            cubes.forEach(cube => {
+                cube.material.color.setHSL(0.6, 0.8, 0.6);
+                cube.material.emissive.setHex(0x000000);
+                cube.scale.set(1, 1, 1);
+            });
+        }
+
+        function highlightCubes(indices, color, emissive = false) {
+            indices.forEach(i => {
+                if (cubes[i]) {
+                    cubes[i].material.color.setHex(color);
+                    if (emissive) {
+                        cubes[i].material.emissive.setHex(color);
+                        cubes[i].material.emissive.multiplyScalar(0.3);
+                    }
+                    cubes[i].scale.set(1.1, 1.1, 1.1);
+                }
+            });
+        }
+
+        function animateJump(indices, height = 3) {
+            return new Promise(resolve => {
+                let t = 0;
+                const duration = 1100 - (animationSpeed * 100);
+                const startYs = indices.map(i => cubes[i].position.y);
+
+                function jumpAnim() {
+                    t += 16;
+                    const progress = t / duration;
+                    const jumpOffset = height * Math.sin(Math.PI * progress);
+
+                    indices.forEach((i, idx) => {
+                        if (cubes[i]) {
+                            cubes[i].position.y = startYs[idx] + jumpOffset;
+                            cubes[i].rotation.y = jumpOffset * 0.1;
+                        }
+                    });
+
+                    renderer.render(scene, camera);
+                    if (progress < 1) {
+                        requestAnimationFrame(jumpAnim);
+                    } else {
+                        indices.forEach((i, idx) => {
+                            if (cubes[i]) {
+                                cubes[i].position.y = startYs[idx];
+                                cubes[i].rotation.y = 0;
+                            }
+                        });
+                        resolve();
+                    }
+                }
+                jumpAnim();
+            });
+        }
+
+        function animateSwap(i, j) {
+            return new Promise(resolve => {
+                let t = 0;
+                const duration = 1200 - (animationSpeed * 100);
+                const startX1 = cubes[i].position.x;
+                const startX2 = cubes[j].position.x;
+                const startY1 = cubes[i].position.y;
+                const startY2 = cubes[j].position.y;
+
+                function swapAnim() {
+                    t += 16;
+                    const progress = Math.min(1, t / duration);
+                    const easedProgress = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+
+                    // Arc motion
+                    const arcHeight = 4;
+                    const midProgress = Math.sin(progress * Math.PI);
+
+                    cubes[i].position.x = startX1 + (startX2 - startX1) * easedProgress;
+                    cubes[j].position.x = startX2 + (startX1 - startX2) * easedProgress;
+
+                    cubes[i].position.y = startY1 + arcHeight * midProgress;
+                    cubes[j].position.y = startY2 + arcHeight * midProgress;
+
+                    cubes[i].rotation.z = midProgress * Math.PI;
+                    cubes[j].rotation.z = -midProgress * Math.PI;
+
+                    renderer.render(scene, camera);
+
+                    if (progress < 1) {
+                        requestAnimationFrame(swapAnim);
+                    } else {
+                        // Reset rotations and positions
+                        cubes[i].position.y = startY1;
+                        cubes[j].position.y = startY2;
+                        cubes[i].rotation.z = 0;
+                        cubes[j].rotation.z = 0;
+
+                        // Swap cubes in array
+                        [cubes[i], cubes[j]] = [cubes[j], cubes[i]];
+                        resolve();
+                    }
+                }
+                swapAnim();
+            });
+        }
+
+        function animatePlace(index, value) {
+            return new Promise(resolve => {
+                if (!cubes[index]) {
+                    resolve();
+                    return;
+                }
+
+                let t = 0;
+                const duration = 800 - (animationSpeed * 60);
+                const startY = cubes[index].position.y;
+                const startScale = cubes[index].scale.x;
+
+                // Update the value
+                array[index] = value;
+                updateCubes();
+
+                function placeAnim() {
+                    t += 16;
+                    const progress = Math.min(1, t / duration);
+                    const bounce = 1 + 0.3 * Math.sin(progress * Math.PI * 2);
+
+                    cubes[index].position.y = startY + 2 * Math.sin(progress * Math.PI);
+                    cubes[index].scale.set(startScale * bounce, startScale * bounce, startScale * bounce);
+
+                    renderer.render(scene, camera);
+
+                    if (progress < 1) {
+                        requestAnimationFrame(placeAnim);
+                    } else {
+                        cubes[index].position.y = startY;
+                        cubes[index].scale.set(startScale, startScale, startScale);
+                        resolve();
+                    }
+                }
+                placeAnim();
+            });
+        }
+
+        async function playStep(step) {
+            resetCubeColors();
+
+            switch (step.type) {
+                case 'compare':
+                    comparisonCount++;
+                    highlightCubes(step.indices, 0xffff00, true);
+                    await animateJump(step.indices, 2);
+                    break;
+
+                case 'swap':
+                    swapCount++;
+                    highlightCubes(step.indices, 0xff2222, true);
+                    await animateSwap(...step.indices);
+                    // Swap values in array
+                    const [i, j] = step.indices;
+                    [array[i], array[j]] = [array[j], array[i]];
+                    updateCubes();
+                    break;
+
+                case 'select':
+                    highlightCubes(step.indices, 0x00ff88, true);
+                    await animateJump(step.indices, 1.5);
+                    break;
+
+                case 'shift':
+                    highlightCubes(step.indices, 0xff8800);
+                    await animateJump(step.indices, 1);
+                    break;
+
+                case 'place':
+                    highlightCubes(step.indices, 0x8800ff, true);
+                    if (step.value !== undefined) {
+                        await animatePlace(step.indices[0], step.value);
+                    } else {
+                        await animateJump(step.indices, 1.5);
+                    }
+                    break;
+
+                case 'pivot':
+                    highlightCubes(step.indices, 0xff0088, true);
+                    await animateJump(step.indices, 2.5);
+                    break;
+            }
+
+            updateStats();
+        }
+
+        async function autoPlaySteps() {
+            isAutoPlaying = true;
+            startSortBtn.disabled = true;
+            pauseSortBtn.disabled = false;
+            nextStepBtn.disabled = true;
+
+            while (currentStep < steps.length && isAutoPlaying && !isPaused) {
+                if (!isAnimating) {
+                    isAnimating = true;
+                    await playStep(steps[currentStep]);
+                    currentStep++;
+                    isAnimating = false;
+
+                    // Small delay between steps
+                    await new Promise(resolve => setTimeout(resolve, 200 - (animationSpeed * 15)));
+                }
+            }
+
+            if (currentStep >= steps.length) {
+                // Sorting complete - celebration animation
+                await celebrateCompletion();
+            }
+
+            isAutoPlaying = false;
+            startSortBtn.disabled = false;
+            pauseSortBtn.disabled = true;
+            nextStepBtn.disabled = currentStep >= steps.length;
+        }
+
+        async function celebrateCompletion() {
+            // Rainbow color animation
+            for (let i = 0; i < cubes.length; i++) {
+                setTimeout(() => {
+                    cubes[i].material.color.setHSL(i / cubes.length, 1, 0.6);
+                    cubes[i].material.emissive.setHSL(i / cubes.length, 1, 0.3);
+                }, i * 100);
+            }
+
+            // Bounce animation
+            const bouncePromises = cubes.map((cube, i) => {
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        animateJump([i], 4).then(resolve);
+                    }, i * 50);
+                });
+            });
+
+            await Promise.all(bouncePromises);
+
+            // Reset colors
+            setTimeout(() => {
+                resetCubeColors();
+            }, 2000);
+        }
+
+        function animate() {
+            // Rotate particles
+            particles.rotation.y += 0.001;
+            particles.rotation.x += 0.0005;
+
+            // Subtle camera movement
+            camera.position.x = Math.sin(Date.now() * 0.0005) * 2;
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+
+        // Event listeners
+        generateArrayBtn.addEventListener('click', () => {
+            createArrayInputs(parseInt(arraySizeInput.value));
+            generateRandomArray();
+            steps = [];
+            currentStep = 0;
+            nextStepBtn.disabled = true;
+            pauseSortBtn.disabled = true;
+            isAutoPlaying = false;
+            isPaused = false;
+        });
+
+        arraySizeInput.addEventListener('change', () => {
+            createArrayInputs(parseInt(arraySizeInput.value));
+            generateRandomArray();
+            steps = [];
+            currentStep = 0;
+            nextStepBtn.disabled = true;
+            pauseSortBtn.disabled = true;
+            isAutoPlaying = false;
+            isPaused = false;
+        });
+
+        algorithmSelect.addEventListener('change', updateAlgorithmInfo);
+
+        speedControl.addEventListener('input', () => {
+            animationSpeed = parseInt(speedControl.value);
+        });
+
+        startSortBtn.addEventListener('click', () => {
+            if (isPaused) {
+                isPaused = false;
+                autoPlaySteps();
+            } else {
+                steps = getSteps(algorithmSelect.value, array);
+                currentStep = 0;
+                resetStats();
+                autoPlaySteps();
+            }
+        });
+
+        pauseSortBtn.addEventListener('click', () => {
+            isPaused = true;
+            isAutoPlaying = false;
+            startSortBtn.disabled = false;
+            pauseSortBtn.disabled = true;
+            nextStepBtn.disabled = false;
+        });
+
+        nextStepBtn.addEventListener('click', async() => {
+            if (currentStep < steps.length && !isAnimating) {
+                isAnimating = true;
+                await playStep(steps[currentStep]);
+                currentStep++;
+                isAnimating = false;
+
+                if (currentStep >= steps.length) {
+                    nextStepBtn.disabled = true;
+                    await celebrateCompletion();
+                }
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            generateRandomArray();
+            steps = [];
+            currentStep = 0;
+            nextStepBtn.disabled = true;
+            pauseSortBtn.disabled = true;
+            isAutoPlaying = false;
+            isPaused = false;
+            resetCubeColors();
+        });
+
+        // Initialize
+        updateAlgorithmInfo();
+        createArrayInputs(parseInt(arraySizeInput.value));
+        generateRandomArray();
+        resizeRenderer();
+        animate();
+    </script>
+</body>
+
+</html>
