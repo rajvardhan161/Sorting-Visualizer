@@ -110,8 +110,3 @@ This project is developed for educational purposes and is open for learning and 
 ✔ Good for viva + GitHub  
 
 ---
-
-If you want next level upgrade, I can add:
-👉 screenshots section (improves marks)  
-👉 GitHub badges (looks pro)  
-👉 short viva explanation for this project
