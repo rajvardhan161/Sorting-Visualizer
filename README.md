@@ -12,6 +12,15 @@ This project provides a **visual and interactive approach** to learning sorting 
 
 ---
 
+
+This project was created during a **Summer Training Program**, focusing on:
+- Practical implementation of algorithms  
+- Visualization techniques for better learning  
+- Improving problem-solving and development skills  
+
+---
+
+
 ## ✨ Key Features
 
 - 🔢 Supports multiple sorting algorithms:
